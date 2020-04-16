@@ -1,0 +1,9 @@
+.eggs/
+build/
+__pycache__/
+*.egg-info/
+*.*~
+*.pyc
+*.so
+starlib/starlib.py
+starlib/starlib_wrap.cpp

@@ -1,0 +1,2 @@
+from .starlib import Star
+
