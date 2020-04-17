@@ -6,21 +6,17 @@
 #include "types.hpp"
 #include "kdhash.hpp"
 
-
-#define HIP_FIELD_LENGTH 78
-
 /** @brief Star database entry
  *
  * Abstracted from stars.h in openstartracker.
  */
 class Star {
 protected:
-  float r[3];           /* (--) star position */
-  float flux;           /* (--) */
-  int id;               /* (--) Hipparcos ID */
+  int id;               /* (--) Hipparcos catalog ID */
+  float r[3];           /* (--) star position in equatorial coordinate system, normalized */
   float p[2];           /* (--) px and py */
+  float flux;           /* (--) */
   bool unreliable;      /* (--) */
-
   star_id_t index;      /* (--) how many stars were inserted before this one */
   float variance;       /* (--) variance */
   hash_t hash;          /* (--) value in the hash table */
@@ -29,19 +25,19 @@ public:
 
   /** @brief Create star from catalog
    */
-  Star(const float pixel_x_tangent, // from CameraConfig
-       const float pixel_y_tangent, // from CameraConfig
-       const float position_variance, // from CameraConfig
-       const float x_,
-       const float y_,
-       const float z_,
-       const float flux_,
-       const int id_,
+  Star(const float& pixel_x_tangent, // from CameraConfig
+       const float& pixel_y_tangent, // from CameraConfig
+       const float& position_variance, // from CameraConfig
+       const float& x_,
+       const float& y_,
+       const float& z_,
+       const float& flux_,
+       const int& id_,
        bool unreliable_ = false)
-    : r{x_, y_, z_}
-    , flux(flux_)
-    , id(id_)
+    : id(id_)
+    , r{x_, y_, z_}
     , p{y_ / (x_ * pixel_x_tangent), z_ / (x_ * pixel_y_tangent)}
+    , flux(flux_)
     , unreliable(unreliable_)
     , index(-1)
     , variance(position_variance)
@@ -55,17 +51,17 @@ public:
    * @param py_   (px) y position relative to camera center
    * @param flux_ brightness of pixel
    */
-  Star(const float pixel_x_tangent, // from CameraConfig
-       const float pixel_y_tangent, // from CameraConfig
-       const float image_variance,  // from CameraConfig
-       const float px_,
-       const float py_,
-       const float flux_,
-       const int id_,
+  Star(const float& pixel_x_tangent, // from CameraConfig
+       const float& pixel_y_tangent, // from CameraConfig
+       const float& image_variance,  // from CameraConfig
+       const float& px_,
+       const float& py_,
+       const float& flux_,
+       const int& id_,
        bool unreliable_ = false)
-    : flux(flux_)
-    , id(id_)
+    : id(id_)
     , p{px_, py_}
+    , flux(flux_)
     , unreliable(unreliable_)
     , index(-1)
     , variance(image_variance / flux_)
@@ -82,6 +78,18 @@ public:
   }
 
 
+  /*  Star(const Star& rhs)
+    : r{rhs.r[0], rhs.r[1], rhs.r[2]}
+    , flux(rhs.flux)
+    , id(rhs.id)
+    , p{rhs.p[0], rhs.p[1]}
+    , unreliable(rhs.unreliable)
+    , index(rhs.index)
+    , variance(rhs.variance)
+    , hash(rhs.hash)
+    {} */
+  
+
   // Fast accessors for position
   float x() const { return r[0]; }
   float y() const { return r[1]; }
@@ -92,6 +100,8 @@ public:
   float py() const { return p[1]; }
 
   float get_flux() const { return flux; }
+
+  int get_id() const { return id; }
 
 
   /** @brief Comparison operator */

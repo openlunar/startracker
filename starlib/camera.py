@@ -3,6 +3,11 @@ import numpy as np
 from ruamel.yaml import YAML
 yaml = YAML()
 
+import warnings
+
+from .starlib import Database
+from .starlib import Star
+
 class Camera(object):
     """Represents a configuration for a specific camera.
 
@@ -65,42 +70,81 @@ class Camera(object):
         # 2 * tan(image radians) / w = dist
         # tan(w * s)
 
-    def load_catalog(self, filename, year,
-                     from_year = 1991.25,
-                     base_flux = None):
+    def load_catalog(self, year,
+                     filename   = 'data/hip_main.dat',
+                     epoch      = 1991.25,
+                     stop_after = 118219):
         """Load a star catalog, such as hip_main.dat.
         
         Updates star positions in the catalog to the provided year
         (all positions are given relative to 1991.25).
 
+        References:
+
+        [0] https://heasarc.gsfc.nasa.gov/W3Browse/all/hipparcos.html
+
+        [1] O'Connell. Magnitude and color systems. ASTR 511 Lec 14.
+            <http://web.ipac.caltech.edu/staff/fmasci/home/astro_refs/magsystems.pdf>
+            Retrieved 16 Apr 2020.
+
+        Args:
+            year        decimal year image was taken
+            filename    location of catalog (default is data/hip_main.dat)
+            epoch       epoch year for catalog (default is 1991.25)
+            stop_after  catalog index after which to stop (this defaults to
+                        past the end of the catalog, but can be set lower
+                        if one doesn't wish to spend the time needed to load
+                        the entire catalog, e.g. for testing)
+
+        Returns:
+            A database object.
+
         """
-        star_database = StarDatabase(self.min_position_variance)
+        database = Database(self.min_position_variance)
         
-        year_diff = year - from_year
+        year_diff = year - epoch
 
         f = open(filename, 'r')
         for line in f:
             fields = line.split('|')
-            mag = float(fields[5])
-            dec_deg = year_diff * float(fields[13]) / 3600000.0 + float(fields[9])
-            dec = dec_deg * np.pi / 180.0
-            cos_dec = np.cos(dec)
-            ra_deg = year_diff * float(fields[12]) / (cos_dec * 3600000.0) + float(fields[8])
-            ra = ra_deg * np.pi/180.0
 
-            star_id = int(fields[1])
-            unreliable = not ((int(fields[29]) == 0 or int(fields[29]) == 1) and int(fields[6]) != 3)
+            star_identifier = int(fields[1])
+            
+            if star_identifier > stop_after: # This is mainly here for debugging purposes.
+                break
 
-            star = Star(np.cos(ra) * cos_dec,
+            try:
+                vmag            = float(fields[5])
+                var_flag        = fields[6]
+
+                # Compute declination at present date
+                dec_proper_motion_deg_per_year = float(fields[13]) / 3600000.0
+                dec_deg_epoch                  = float(fields[9])
+                dec_deg                        = year_diff * dec_proper_motion_deg_per_year + dec_deg_epoch
+                dec                            = dec_deg * np.pi / 180.0 # in radians
+                cos_dec                        = np.cos(dec)
+
+                # Compute right ascension at present date
+                ra_proper_motion_deg_per_year = float(fields[12]) / (cos_dec * 3600000.0)
+                ra_deg_epoch                  = float(fields[8])
+                ra_deg                        = year_diff * ra_proper_motion_deg_per_year + ra_deg_epoch
+                ra                            = ra_deg * np.pi/180.0 # in radians
+            except ValueError:
+                warnings.warn("unable to read data for catalog star {}".format(star_identifier))
+                continue # skip this star
+            
+            reject_percent  = int(fields[29])
+            reliable        = reject_percent in (0, 1) and var_flag != '3'
+            star = Star(self.pixel_x_tangent, self.pixel_y_tangent, self.image_variance,
+                        np.cos(ra) * cos_dec,
                         np.sin(ra) * cos_dec,
                         np.sin(dec),
-                        self.base_flux * 10.0 ** (-mag / 2.5),
-                        star_id,
-                        unreliable)
-
-            star_database += star
-
+                        self.base_flux * 10.0 ** (-vmag / 2.5), # see ref [1]
+                        star_identifier,
+                        not reliable)
+            database += star
+            
         f.close()
         
-        return star_database
+        return database
             

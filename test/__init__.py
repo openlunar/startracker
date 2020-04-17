@@ -1,5 +1,8 @@
 import unittest
+
 from test import test_star
+from test import test_database
+from test import test_camera
 
 def starlib_test_suite():
     """
@@ -9,6 +12,9 @@ def starlib_test_suite():
 
     loader = unittest.TestLoader()
     suite  = unittest.TestSuite()
+    
     suite.addTests(loader.loadTestsFromModule(test_star))
+    suite.addTests(loader.loadTestsFromModule(test_camera))
+    suite.addTests(loader.loadTestsFromModule(test_database))
 
     return suite
