@@ -1,5 +1,5 @@
-#ifndef DATABASE_HPP
-# define DATABASE_HPP
+#ifndef STAR_DATABASE_HPP
+# define STAR_DATABASE_HPP
 
 #include <unordered_map>
 #include <set>
@@ -8,6 +8,7 @@
 
 #include "types.hpp"
 #include "star.hpp"
+
 
 /** @brief Hashed database of stars
  *
@@ -23,7 +24,7 @@
  * This database class is more or less as implemented in the original
  * openstartracker, but with clearer code and comments.
  */
-class Database {
+class StarDatabase {
 protected:
 
   std::unordered_map<hash_t,Star> hash_map; /* (--) hash from star hash value to star */
@@ -37,15 +38,15 @@ public:
   // FIXME: This should not be public
   static size_t count;                      /* (--) number of active databases */
   
-  Database(float max_variance_ = 0.0)
+  StarDatabase(float max_variance_ = 0.0)
     : max_variance(max_variance_)
   {
-    Database::count++;
+    StarDatabase::count++;
   }
 
-  ~Database()
+  ~StarDatabase()
   {
-    Database::count--;
+    StarDatabase::count--;
   }
 
   float get_max_variance() const { return max_variance; }
@@ -62,7 +63,7 @@ public:
 
   /** @brief Add a star to the database (this version creates a copy).
    */
-  Database& operator+=(const Star& star) {
+  StarDatabase& operator+=(const Star& star) {
     if (!contains(star)) {
       Star temp(star);
       temp.set_index(size());
@@ -73,7 +74,7 @@ public:
 
   /** @brief Add a star to the database.
    */
-  Database& operator+=(Star& star) {
+  StarDatabase& operator+=(Star& star) {
     if (!contains(star)) {
       add_internal(star);
     }
@@ -142,4 +143,4 @@ protected:
   }
 };
 
-#endif // DATABASE_HPP
+#endif // STAR_DATABASE_HPP

@@ -17,5 +17,3 @@ class TestCamera(unittest.TestCase):
         self.assertLess(db.size, 1000)
         self.assertGreater(db.size, 0)
 
-        import pdb
-        pdb.set_trace()

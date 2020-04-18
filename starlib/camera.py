@@ -5,7 +5,7 @@ yaml = YAML()
 
 import warnings
 
-from .starlib import Database
+from .starlib import StarDatabase
 from .starlib import Star
 
 class Camera(object):
@@ -55,7 +55,7 @@ class Camera(object):
 
         self.image_width = w
         self.image_height = h
-        self.radians_per_pixel = radians_per_pixel
+        self.radians_per_pixel     = radians_per_pixel
         self.position_error_sigma  = float(y['position_error_sigma'])
         self.min_position_variance = float(y['min_position_variance']) # for each star
         self.image_variance        = float(y['image_variance'])
@@ -69,6 +69,8 @@ class Camera(object):
         # tan(image radians) = (w / 2) / dist
         # 2 * tan(image radians) / w = dist
         # tan(w * s)
+
+        f.close()
 
     def load_catalog(self, year,
                      filename   = 'data/hip_main.dat',
@@ -100,7 +102,7 @@ class Camera(object):
             A database object.
 
         """
-        database = Database(self.min_position_variance)
+        database = StarDatabase(self.min_position_variance)
         
         year_diff = year - epoch
 

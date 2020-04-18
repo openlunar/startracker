@@ -3,9 +3,9 @@
 %module starlib
 %{
 #include "star.hpp"
-#include "database.hpp"
+#include "star_database.hpp"
 
-size_t Database::count = 0;
+size_t StarDatabase::count = 0;
 %}
 
 // FIXME: This next line is a bit fragile
@@ -32,12 +32,12 @@ size_t Database::count = 0;
 
 %include "star.hpp"
 
-%attribute(Database, size_t, size, size);
-%attribute(Database, float, max_variance, get_max_variance);
+%attribute(StarDatabase, size_t, size, size);
+%attribute(StarDatabase, float, max_variance, get_max_variance);
 
-%extend Database {
+%extend StarDatabase {
 %pythoncode {
-       def __repr__(self): return "Database(size={}, max_variance={})".format(self.size, self.max_variance)
+       def __repr__(self): return "StarDatabase(size={}, max_variance={})".format(self.size, self.max_variance)
 }};
 
-%include "database.hpp"
+%include "star_database.hpp"
