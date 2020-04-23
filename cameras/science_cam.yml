@@ -13,3 +13,4 @@ position_error_sigma: 2
 min_position_variance: 0.666903299486
 aperture: 60.7
 exposure_time: 0.05
+median_image_path: 'images/science_cam_2018-05-08_50ms_gain40/median_image.png'

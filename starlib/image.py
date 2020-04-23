@@ -1,5 +1,5 @@
+import os.path
 import cv2
-import time as time
 import numpy as np
 import warnings
 
@@ -84,17 +84,19 @@ class ImageData(object):
         return star
 
 class Image(object):
-    def __init__(self, camera, image_filename, median_image,
-                 show = False):
-        timestamp = time.time()
+    def __init__(self, camera, timestamp, image_filename,
+                 show      = False):
         self.data = ImageData(camera, timestamp)
         self.stars = StarDatabase() # Put stars from the image here.
 
-        image = cv2.imread(image_filename)
-        if image is None: # cv2 doesn't raise exceptions, annoyingly
+        if os.path.isfile(image_filename):
+            image = cv2.imread(image_filename)
+            if image is None: # cv2 doesn't raise exceptions, annoyingly
+                raise StandardError("opencv was unable to open file '{}' for unknown reasons".format(image_filename))
+        else:
             raise FileNotFoundError("No such file or directory: '{}'".format(image_filename))
 
-        image = np.clip(image.astype(np.int16) - median_image, a_min = 0, a_max = 255).astype(np.uint8)
+        image = np.clip(image.astype(np.int16) - camera.median_image, a_min = 0, a_max = 255).astype(np.uint8)
         grayscale_image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 
         # Black out areas of the image that don't meet our brightness threshold
@@ -119,6 +121,7 @@ class Image(object):
         ImageData.add_blob, but this method also adds to the
         StarDatabase for the image.
 
+        See ImageData.add_blob() for arguments and return information.
         """
         star = self.data.add_blob(*args)
         if star is None:

@@ -157,4 +157,21 @@ public:
 };
 
 
+bool star_ptr_rx_less(const Star* lhs, const Star* rhs) {
+  return lhs->x() < rhs->x();
+}
+
+bool star_ptr_ry_less(const Star* lhs, const Star* rhs) {
+  return lhs->y() < rhs->y();
+}
+
+bool star_ptr_rz_less(const Star* lhs, const Star* rhs) {
+  return lhs->z() < rhs->z();
+}
+
+bool star_ptr_flux_greater(const Star* lhs, const Star* rhs) {
+  return lhs->get_flux() > rhs->get_flux();
+}
+
+
 #endif // STAR_HPP

@@ -5,9 +5,9 @@ import unittest
 
 from .context import StarDatabase, Star
 
-class TestDatabase(unittest.TestCase):
+class TestStarDatabase(unittest.TestCase):
 
-    def test_database(self):
+    def test_star_database(self):
         """Creation of databases appropriately increases the database count"""
         db = StarDatabase()
 

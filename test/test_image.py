@@ -1,5 +1,6 @@
 import unittest
 import cv2
+import time
 
 from .context import Image, Camera
 
@@ -10,9 +11,11 @@ class TestImage(unittest.TestCase):
         
     def test_image(self):
         """Constructs image object successfully"""
-        median_image = cv2.imread('images/science_cam_2020-05-08_50ms_gain40/median_image.png')
-        image = Image(self.camera, 'images/science_cam_2020-05-08_50ms_gain40/samples/img0.png', median_image,
-                      show = True)
+        
+        image = Image(self.camera,
+                      time.time(),
+                      'images/science_cam_2018-05-08_50ms_gain40/samples/img0.png',
+                      show = False)
 
         self.assertEqual(image.stars.size, len(image.data.fluxes))
         self.assertEqual(image.stars.size, len(image.data.centroids))

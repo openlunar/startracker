@@ -5,7 +5,7 @@ from .context import Camera
 class TestCamera(unittest.TestCase):
 
     def setUp(self):
-        self.camera = Camera('cameras/flircam_jan2020.yml')
+        self.camera = Camera('cameras/science_cam.yml')
     
     def test_camera(self):
         """Camera constructor loads a yaml configuration"""

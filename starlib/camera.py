@@ -1,4 +1,8 @@
+import os.path
+import time as time
+
 import numpy as np
+import cv2
 
 from ruamel.yaml import YAML
 yaml = YAML()
@@ -17,7 +21,7 @@ class Camera(object):
     configuration file.
     """
     
-    kdbucket_scale = 3.5 # default value, not sure where it came from
+    kdbucket_scale = 3.5 * (360 / np.pi)**2 # 3.5 is default value, not sure where it came from
     
     def __init__(self, filename):
         """Constructor for loading a camera configuration into a Python
@@ -51,7 +55,7 @@ class Camera(object):
         self.pixel_y_tangent = 2 * np.tan(h * radians_per_pixel) / h
 
         # Get size of a kd-tree bucket
-        self.kdbucket_size = w * radians_per_pixel * (h * radians_per_pixel) * self.kdbucket_scale
+        self.kdbucket_size = int((w * radians_per_pixel) * (h * radians_per_pixel) * self.kdbucket_scale)
 
         self.image_width = w
         self.image_height = h
@@ -64,6 +68,15 @@ class Camera(object):
         self.max_false_stars       = int(y['max_false_stars'])
         self.db_redundancy         = int(y['db_redundancy'])
         self.base_flux             = float(y['base_flux'])
+
+        if 'median_image_path' in y:
+            if os.path.isfile(y['median_image_path']):
+                self.median_image          = cv2.imread(y['median_image_path'])
+            else:
+                raise FileNotFoundError("No such file or directory: '{}'".format(y['median_image_path']))
+        else:
+            warnings.warn("{}: Need median_image_path configuration option in order to load median image".format(filename))
+            self.median_image          = None
         
 
         # tan(image radians) = (w / 2) / dist
@@ -150,3 +163,22 @@ class Camera(object):
         
         return database
             
+    def solve(self, image_filename):
+
+        # Get time of image receipt, attempt to process the image, and
+        # then get another timestamp.
+        timestamp              = time.time()
+        current_image          = Image(self, timestamp, image_filename)
+        timestamp_done_loading = time.time()
+
+        # 1. Attempt to match based on brightest stars in image.
+
+        # 2. Attempt to match based on last match.
+
+        # 3. Make a list of things that turned out not to be stars?
+        
+        # At this point, solve_image() in openstartracker *optionally*
+        # (but by default) calls match_lis(). Then, if there's a
+        # previous match, it also calls match_rel on that previous
+        # match. Next, it calls update_nonstars().
+        

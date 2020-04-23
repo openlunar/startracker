@@ -6,3 +6,4 @@ from starlib import Star
 from starlib import StarDatabase
 from starlib import Camera
 from starlib import Image
+from starlib import KDTree
