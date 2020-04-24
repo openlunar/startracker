@@ -2,6 +2,7 @@
 # define STAR_HPP
 
 #include <string>
+#include <iostream>
 
 #include "types.hpp"
 #include "kdhash.hpp"
@@ -94,10 +95,12 @@ public:
   float x() const { return r[0]; }
   float y() const { return r[1]; }
   float z() const { return r[2]; }
+  float get_r(size_t index) const { return r[index]; }
 
   // Fast accessors for focal plane array position
   float px() const { return p[0]; }
   float py() const { return p[1]; }
+  float get_p(size_t index) const { return p[index]; }
 
   float get_flux() const { return flux; }
 
@@ -109,18 +112,97 @@ public:
     return hash == rhs.hash;
   }
 
-  /** @brief Numerically stable method to calculate distance between stars
+  
+  /** @brief Numerically stable method to calculate distance between
+   **        stars, assumes a small angle approximation.
    *
    * @param rhs  star to get distance from
    *
    * @return Angular separation in radians
    */
-  float distance(const Star& rhs) const {
-    float a = r[0] * rhs.r[1] - rhs.r[0] * r[1];
-    float b = r[0] * rhs.r[2] - rhs.r[0] * r[2];
-    float c = r[1] * rhs.r[2] - rhs.r[1] * r[2];
+  float approximate_distance(const Star& rhs) const {
+    return approximate_distance(rhs.r[0], rhs.r[1], rhs.r[2]);
+  }
 
-    return asin(sqrt(a*a + b*b + c*c));
+
+  float approximate_distance(const float& x, const float& y, const float& z) const {
+    float dot_product = r[0] * x + r[1] * y + r[2] * z;
+
+    float a = r[0] * y - x * r[1];
+    float b = r[0] * z - x * r[2];
+    float c = r[1] * z - y * r[2];
+
+    if (dot_product >= 0) {
+      return asin(sqrt(a * a + b * b + c * c));
+    } else {
+      std::cerr << "Warning: Angles are too far apart. distance() is unstable; use exact_distance()." << std::endl;
+      return M_PI - asin(sqrt(a * a + b * b + c * c));
+    }
+  }
+  
+
+  /** @brief Numerically stable angular separation method.
+   *
+   * This method assumes the star's position vector is a unit vector
+   * and that <x, y, z> are normalized.
+   *
+   * The angle between vectors $\mathrm{a}$ and $\mathrm{b}$ is given by
+   *
+   *    \theta = 2 \arctan( \frac{ \| \mathrm{a} b - a \mathrm{b} \| }{\| \mathrm{a} b + a \mathrm{b} \| }
+   *
+   * However, we are using unit vectors, so we can simplify this expression quite a bit:
+   *
+   *    \theta = 2 \arctan( \frac{ \| \mathrm{a} - \mathrm{b} \| }{ \| \mathrm{a} + \mathrm{b} \| }
+   *
+   * Reference:
+   *
+   * * Kahan, W. 2006. How futile are mindless assessments of roundoff
+   *   in floating-point computation. p. 47. Retrieved from
+   *   https://people.eecs.berkeley.edu/~wkahan/Mindless.pdf on 24
+   *   April 2020.
+   */
+  float exact_distance(const float& x, const float& y, const float& z) const {
+    float amag = sqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2]);
+    float bmag = sqrt(x * x + y * y + z * z);
+
+    float nx = r[0] * bmag - amag * x;
+    float ny = r[1] * bmag - amag * y;
+    float nz = r[2] * bmag - amag * z;
+
+    float dx = r[0] * bmag + amag * x;
+    float dy = r[1] * bmag + amag * y;
+    float dz = r[2] * bmag + amag * z;
+
+    return 2.0 * atan( sqrt(nx * nx + ny * ny + nz * nz) / sqrt(dx * dx + dy * dy + dz * dz) );
+  }
+
+
+  float exact_distance(const Star& rhs) const {
+    return exact_distance(rhs.r[0], rhs.r[1], rhs.r[2]);
+  }
+
+
+  /** @brief Get the squared length of the vector from this star to some point.
+   */
+  float vector_squared_distance(const float& x, const float& y, const float& z) const {
+    float dx = x - r[0];
+    float dy = y - r[1];
+    float dz = z - r[2];
+
+    return dx * dx + dy * dy + dz * dz;
+  }
+
+  
+  float vector_squared_distance(const Star& rhs) const {
+    return vector_squared_distance(rhs.r[0], rhs.r[1], rhs.r[2]);
+  }
+
+  float vector_distance(const float& x, const float& y, const float& z) const {
+    return sqrt(vector_squared_distance(x, y, z));
+  }
+
+  float vector_distance(const Star& rhs) const {
+    return sqrt(vector_squared_distance(rhs));
   }
 
 
