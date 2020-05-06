@@ -7,3 +7,4 @@ from starlib import StarDatabase
 from starlib import Camera
 from starlib import Image
 from starlib import KDTree
+from starlib import MaskVector

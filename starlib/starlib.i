@@ -1,9 +1,11 @@
 %include <attribute.i>
 %include <exception.i>
 %include <std_vector.i>
+%include <std_set.i>
 
 namespace std {
   %template(BoolVector) vector<bool>;
+  %template(IndexSet) set<size_t>;
 }
 
 %module starlib
@@ -60,6 +62,7 @@ static int kdtree_iterator_error = 0;
 }};
 
 %attribute(KDTree, size_t, size, size);
+%attribute(KDTree, bool, sorted, is_sorted);
 
 %include "kdtree.hpp"
 %include "py_kdtree_iterator.hpp"
@@ -117,10 +120,10 @@ static int kdtree_iterator_error = 0;
     return ret;
   }
 
+  // Now load some additional class methods
 %pythoncode %{
-  def filter_catalog(self):
-    for star in self:
-      print("star index = {}".format(star.index))
+  from .kdtree_class_methods import filter_mask
+  from .kdtree_class_methods import uniform_density_mask
 %}
 
 };

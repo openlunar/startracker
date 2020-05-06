@@ -57,8 +57,8 @@ class Camera(object):
         # Get size of a kd-tree bucket
         self.kdbucket_size = int((w * radians_per_pixel) * (h * radians_per_pixel) * self.kdbucket_scale)
 
-        self.image_width = w
-        self.image_height = h
+        self.image_width           = w
+        self.image_height          = h
         self.radians_per_pixel     = radians_per_pixel
         self.position_error_sigma  = float(y['position_error_sigma'])
         self.min_position_variance = float(y['min_position_variance']) # for each star
@@ -66,6 +66,7 @@ class Camera(object):
         self.threshold_factor      = float(y['threshold_factor'])
         self.double_star_pixels    = float(y['double_star_pixels'])
         self.max_false_stars       = int(y['max_false_stars'])
+        self.min_stars_per_fov     = int(y['min_stars_per_fov'])
         self.db_redundancy         = int(y['db_redundancy'])
         self.base_flux             = float(y['base_flux'])
 

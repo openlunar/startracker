@@ -1,6 +1,6 @@
 import unittest
 
-from .context import KDTree, Camera
+from .context import KDTree, Camera, MaskVector
 
 class TestKDTree(unittest.TestCase):
 
@@ -68,10 +68,18 @@ class TestKDTree(unittest.TestCase):
         tree = KDTree(self.db, self.camera.kdbucket_size)
         tree.sort()
 
-        mask = tree.mask_search(1.0, 0.0, 0.0, 0.1, 0.0)
-        items = tree.at(mask)
+        mask = MaskVector()
+        tree.mask_search(1.0, 0.0, 0.0, 0.1, 0.0, 0.0, mask)
+        items = tree.with_mask(mask)
 
         # Make a new tree from the same database but with only the
         # items from the mask.
         new_tree = KDTree(tree, items)
         
+
+    def test_kdtree_ext(self):
+        """kdtree_ext.py functions are properly added to KDTree"""
+
+        tree       = KDTree(self.db, self.camera.kdbucket_size)
+        mask       = tree.filter_mask(self.camera)
+        final_mask = tree.uniform_density_mask(self.camera, mask)

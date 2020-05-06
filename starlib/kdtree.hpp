@@ -4,7 +4,9 @@
 #include <vector>
 #include <list>
 #include <set>
+#include <map>
 #include <iostream>
+#include <limits>
 
 #include "star_database.hpp"
 
@@ -63,6 +65,10 @@ public:
   {
   }
 
+  bool is_sorted() const {
+    return sorted;
+  }
+
 
   /** @brief Perform a KDTree sort.
    */
@@ -76,43 +82,52 @@ public:
   }
 
 
-  KDTree search_sorted(const float& x, const float& y, const float& z, const float& radius, const float& min_flux) const {
+  KDTree search_sorted(const float& x, const float& y, const float& z, const float& radius, const float& min_flux, float max_flux = std::numeric_limits<float>::max()) const {
     if (!sorted) {
       std::cerr << "Error: attempted to search an unsorted tree" << std::endl;
       throw;
     }
+
+    if (max_flux <= 0.0)
+      max_flux = std::numeric_limits<float>::max();
     
     std::vector<Star*> found;
     
-    search_dim<0, std::vector<Star*> >(found, elements.begin(), elements.end(), x, y, z, radius, min_flux);
+    search_dim<0, std::vector<Star*> >(found, elements.begin(), elements.end(), x, y, z, radius, min_flux, max_flux);
 
     // Create a KDTree from the found stars.
     return KDTree(*this, found);
   }
 
-  std::vector<bool> mask_search_sorted(const float& x, const float& y, const float& z, const float& radius, const float& min_flux) const {
+
+  void mask_search(const float& x, const float& y, const float& z, const float& radius,
+		   const float& min_flux, float max_flux,
+		   std::vector<bool>& found) const {
     if (!sorted) {
       std::cerr << "Error: attempted to search an unsorted tree" << std::endl;
       throw;
     }
 
-    std::vector<bool> found(elements.size(), false);
-    search_dim<0, std::vector<bool> >(found, elements.begin(), elements.end(), x, y, z, radius, min_flux);
+    if (max_flux <= 0.0)
+      max_flux = std::numeric_limits<float>::max();
 
-    return found;
+    // If an empty vector is given, initialize with the correct size
+    // and start with all false
+    if (found.size() != elements.size()) {
+      found = std::vector<bool>(elements.size(), false);
+    }
+
+    search_dim<0, std::vector<bool> >(found, elements.begin(), elements.end(), x, y, z, radius, min_flux, max_flux);
   }
 
   
-  KDTree search(const float& x, const float& y, const float& z, const float& radius, const float& min_flux) {
+  KDTree search(const float& x, const float& y, const float& z, const float& radius,
+		const float& min_flux,
+		float max_flux = std::numeric_limits<float>::max()) {
     sort();
-    return search_sorted(x, y, z, radius, min_flux);
+    return search_sorted(x, y, z, radius, min_flux, max_flux);
   }
 
-
-  std::vector<bool> mask_search(const float& x, const float& y, const float& z, const float& radius, const float& min_flux) {
-    sort();
-    return mask_search_sorted(x, y, z, radius, min_flux);
-  }
 
 
   // Methods for accessing contents of elements
@@ -121,14 +136,14 @@ public:
   Star* at(const size_t& index) { return elements[index]; }
   size_t size() const { return elements.size(); }
 
-  /** @brief List comprehension operator
+  /** @brief List comprehension operator for masked stars
    */
-  std::vector<Star*> at(const std::vector<bool>& mask) const {
+  std::vector<Star*> with_mask(const std::vector<bool>& mask, bool keep_value = true) const {
     std::vector<Star*> result(std::count(mask.begin(), mask.end(), true));
     
     size_t to_index = 0;
     for (size_t from_index = 0; from_index < mask.size(); ++from_index) {
-      if (mask[from_index]) {
+      if (mask[from_index] == keep_value) {
 	result[to_index++] = elements[from_index];
       }
     }
@@ -137,12 +152,34 @@ public:
   }
 
 
-  /*
-  KDTree find_k_nearest(const float& x, const float& y, const float& z, const float& r,
-			const float& min_flux,
-			const int& min, const int& max,
-			const int dim) {
-			} */
+  /** @brief Get the n brightest indices for a given mask and add them
+   **        to the provided indices result set.
+   */
+  void add_n_brightest_mask_indices(const std::vector<bool>& mask,
+				    std::set<size_t>& indices,
+				    size_t n,
+				    bool keep_value = true) const {
+    typedef std::map<Star*, size_t, UniqueStarPtrFluxGreater> bright_map_t;
+
+    // Order the stars in the FOV by brightness.
+    bright_map_t brightest;
+    for (size_t index = 0; index < mask.size(); ++index) {
+      if (mask[index] == keep_value) {
+	brightest.emplace( elements[index], index );
+
+	// Don't let it grow beyond a certain size.
+	if (brightest.size() > n) {
+	  // Now remove the dimmest from the set.
+	  brightest.erase(brightest.rbegin()->first);
+	}
+      }
+    }
+
+    for (bright_map_t::const_iterator it = brightest.begin(); it != brightest.end(); ++it) {
+      indices.insert(it->second);
+    }
+  }
+
   
 
 protected:
@@ -205,34 +242,49 @@ protected:
 		    float y,
 		    float z,
 		    const float& r,
-		    const float& min_flux) const {
+		    const float& min_flux,
+		    const float& max_flux) const {
     x -= (*it)->x();
     y -= (*it)->y();
     z -= (*it)->z();
     
     if ((x - r <= 0 && 0 <= x + r) && (y - r <= 0 && 0 <= y + r) && (z - r <= 0 && 0 <= z + r) &&
-	((*it)->get_flux() >= min_flux) &&
+	(*it)->get_flux() >= min_flux &&
+	(*it)->get_flux() <  max_flux &&
 	(x * x + y * y + z * z <= r * r)) {
       result.push_back(*it);
     }
   }
 
-
+  
+  /** @brief Check whether a star meets the constraints for inclusion, using
+   **        a mask.
+   *
+   * See the other search_check() function. This one is only slightly
+   * different, in that instead of returning a vector of results, it
+   * sets corresponding indices in a boolean mask to true. This
+   * enables a layering of results from multiple searches.
+   */
   void search_check(std::vector<bool>& result,
 		    std::vector<Star*>::const_iterator it,
 		    float x,
 		    float y,
 		    float z,
 		    const float& r,
-		    const float& min_flux) const {
+		    const float& min_flux,
+		    const float& max_flux) const {
     x -= (*it)->x();
     y -= (*it)->y();
     z -= (*it)->z();
+
+    size_t index = std::distance(elements.begin(), it);
     
-    if ((x - r <= 0 && 0 <= x + r) && (y - r <= 0 && 0 <= y + r) && (z - r <= 0 && 0 <= z + r) &&
-	((*it)->get_flux() >= min_flux) &&
+    if (!result[index] &&
+	(x - r <= 0 && 0 <= x + r) && (y - r <= 0 && 0 <= y + r) && (z - r <= 0 && 0 <= z + r) &&
+	(*it)->get_flux() >= min_flux &&
+	(*it)->get_flux() <  max_flux &&
 	(x * x + y * y + z * z <= r * r)) {
-      result[ std::distance(elements.begin(), it) ] = true;
+      result[index] = true;
     }
   }
   
@@ -245,7 +297,8 @@ protected:
 		  const float& y,
 		  const float& z,
 		  const float& radius,
-		  const float& min_flux) const {
+		  const float& min_flux,
+		  const float& max_flux) const {
     std::vector<Star*>::const_iterator mid = min + (max - min) / 2;
 
     // Get bounds
@@ -257,10 +310,10 @@ protected:
     // Search the left half
     if (min < mid && center - radius <= (*mid)->get_r(Dim)) {
       if (mid - min > kdbucket_size) {
-	search_dim<(Dim + 1) % 3, ResultT>(result, min, mid, x, y, z, radius, min_flux);
+	search_dim<(Dim + 1) % 3, ResultT>(result, min, mid, x, y, z, radius, min_flux, max_flux);
       } else { // Search a bucket
 	for (std::vector<Star*>::const_iterator it = min; it < mid; ++it) {
-	  search_check(result, it, x, y, z, radius, min_flux);
+	  search_check(result, it, x, y, z, radius, min_flux, max_flux);
 	}
       }
     }
@@ -269,7 +322,7 @@ protected:
     // search. Why can't this just be included in the search of the
     // right half?
     if (mid < max) {
-      search_check(result, mid, x, y, z, radius, min_flux);
+      search_check(result, mid, x, y, z, radius, min_flux, max_flux);
     }
 
     // In openstartracker, we here checked to make sure the list of
@@ -280,10 +333,10 @@ protected:
     // Search the right half
     if (mid + 1 < max && (*mid)->get_r(Dim) <= center + radius) {
       if (max - (mid + 1) > kdbucket_size) {
-	search_dim<(Dim + 1) % 3, ResultT>(result, mid + 1, max, x, y, z, radius, min_flux);
+	search_dim<(Dim + 1) % 3, ResultT>(result, mid + 1, max, x, y, z, radius, min_flux, max_flux);
       } else {  // Search a bucket
 	for (std::vector<Star*>::const_iterator it = mid + 1; it < max; ++it) {
-	  search_check(result, it, x, y, z, radius, min_flux);
+	  search_check(result, it, x, y, z, radius, min_flux, max_flux);
 	}
       }
     }

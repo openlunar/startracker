@@ -4,7 +4,7 @@ image_height: 3000
 pixel_arcseconds: 16.992
 db_redundancy: 1
 double_star_pixels: 3.5
-required_stars: 5
+min_stars_per_fov: 5
 max_false_stars: 2
 base_flux: 254758.120205
 threshold_factor: 5

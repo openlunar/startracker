@@ -256,4 +256,21 @@ bool star_ptr_flux_greater(const Star* lhs, const Star* rhs) {
 }
 
 
+bool star_ptr_unique_flux_greater(const Star* lhs, const Star* rhs) {
+  if (lhs->get_flux() == rhs->get_flux()) {
+    return lhs < rhs;
+  } else {
+    return star_ptr_flux_greater(lhs, rhs);
+  }
+}
+
+
+class UniqueStarPtrFluxGreater {
+public:
+  bool operator()(const Star* lhs, const Star* rhs) const {
+    return star_ptr_unique_flux_greater(lhs, rhs);
+  }
+};
+
+
 #endif // STAR_HPP
