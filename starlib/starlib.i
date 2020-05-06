@@ -1,12 +1,15 @@
 %include <attribute.i>
+%include <exception.i>
 
 %module starlib
 %{
 #include "star.hpp"
 #include "star_database.hpp"
 #include "kdtree.hpp"
+#include "py_kdtree_iterator.hpp"
 
 size_t StarDatabase::count = 0;
+static int kdtree_iterator_error = 0;
 %}
 
 // FIXME: This next line is a bit fragile
@@ -46,19 +49,66 @@ size_t StarDatabase::count = 0;
 %attribute(KDTree, size_t, size, size);
 
 %include "kdtree.hpp"
+%include "py_kdtree_iterator.hpp"
 
-   
+%extend KDTreeIterator {
+  KDTreeIterator* __iter__() {
+    return $self;
+  }
+
+  // This next bit is in pythoncode because to return StopIteration,
+  // it needs to return a PyObject* instead of a Star*, and I'm not
+  // quite sure how to write that in swiggable C++ without getting a
+  // segfault.
+%pythoncode %{
+  def __next__(self):
+    if self.pos >= self.list.size:
+      raise StopIteration()
+    ret = self.list.at(self.pos)
+    self.pos += 1
+    return ret
+%}
+}
+
+%exception KDTree::__getitem__ {
+  assert(!kdtree_iterator_error);
+  $action
+  if (kdtree_iterator_error) {
+    kdtree_iterator_error = 0; // clear flag
+    SWIG_exception(SWIG_IndexError, "index out of bounds");
+  }
+}
+
+%exception KDTreeIterator::__next__ {
+  assert(!kdtree_iterator_error);
+  $action
+  if (kdtree_iterator_error) {
+    kdtree_iterator_error = 0; // clear flag
+    PyErr_SetNone(PyExc_StopIteration, "end of list");
+  }
+}
+
+
 %extend KDTree {
-%pythoncode {
-  def __getitem__(self, index):
-    if index >= 0 and index < self.size:
-      return self.at(index)
-    else:
-      raise KeyError("out of bounds")
-}};
-   
+  Star* __getitem__(size_t index) {
+    if (index >= $self->size() || index < 0) {
+      kdtree_iterator_error = 1;
+      return NULL;
+    }
+    return $self->at(index);
+  }
+
+  KDTreeIterator __iter__() {
+    KDTreeIterator ret = { $self, 0 };
+    return ret;
+  }
+
+%pythoncode %{
+  def filter_catalog(self):
+    for star in self:
+      print("star index = {}".format(star.index))
+%}
+
+};
 
 
-   //%attribute(ConstellationDatabase, size_t, size, size);
-
-   //%include "constellation_database.hpp"

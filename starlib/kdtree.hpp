@@ -8,15 +8,6 @@
 
 #include "star_database.hpp"
 
-#define KDBUCKET_SIZE
-
-class flux_greater_t {
-public:
-  bool operator()(const Star * const lhs, const Star * const rhs) const {
-    return (lhs->get_flux() > rhs->get_flux());
-  }
-};
-
 
 /** @brief Array-based 3D kd-tree for storing stars.
  *
@@ -90,7 +81,6 @@ public:
     std::vector<Star*> found;
     
     search_dim<0>(found, elements.begin(), elements.end(), x, y, z, radius, min_flux);
-    std::cerr << "found size = " << found.size() << std::endl;
 
     // Create a KDTree from the found stars.
     return KDTree(db, kdbucket_size, found);
@@ -101,7 +91,6 @@ public:
     sort();
     return search_sorted(x, y, z, radius, min_flux);
   }
-  
 
 
   // Methods for accessing contents of elements
@@ -133,10 +122,16 @@ protected:
   template <int Dim>
   void sort_dim(std::vector<Star*>::iterator min, std::vector<Star*>::iterator max) {
     std::vector<Star*>::iterator mid = min + (max - min) / 2;
+
+    // Use the appropriate sort function for the given dimension.
+    bool (*sort_function)(const Star*, const Star*);
+    if (Dim == 0)      sort_function = star_ptr_rx_less;
+    else if (Dim == 1) sort_function = star_ptr_ry_less;
+    else	       sort_function = star_ptr_rz_less;
     
     if (min + 1 < max) {
       // Sort the first half of the elements by star x position.
-      std::nth_element(min, mid, max, star_ptr_rx_less);
+      std::nth_element(min, mid, max, sort_function);
 
       // Sort the first half of the list by star y position or by star
       // flux (depending on number of stars in this portion).
@@ -184,7 +179,7 @@ protected:
       result.push_back(*it);
     }
   }
-
+  
   
   template <int Dim>
   void search_dim(std::vector<Star*>& result,
@@ -217,8 +212,9 @@ protected:
     // Not clear to me why we check the center as part of a recursive
     // search. Why can't this just be included in the search of the
     // right half?
-    if (mid < max)
+    if (mid < max) {
       search_check(result, mid, x, y, z, radius, min_flux);
+    }
 
     // In openstartracker, we here checked to make sure the list of
     // results didn't exceed a maximum, but this check really seems to

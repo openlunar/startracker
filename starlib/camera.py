@@ -85,6 +85,14 @@ class Camera(object):
 
         f.close()
 
+    @property
+    def double_star_angle(self):
+        return self.double_star_pixels * self.radians_per_pixel
+
+    @property
+    def min_observable_flux(self):
+        return self.threshold_factor * self.image_variance
+
     def load_catalog(self, year,
                      filename   = 'data/hip_main.dat',
                      epoch      = 1991.25,

@@ -114,6 +114,26 @@ public:
     }
   }
 
+  /** @brief Return a set of all stars in the database by brightness.
+   */
+  /*std::set<Star*> stars_by_greatest_flux(size_t max_stars = 0) const {
+    if (max_stars == 0) max_stars = size();
+    std::set<Star*> result;
+    
+    for (std::multimap<float,hash_t>::const_iterator iter = flux_map.rbegin();
+	 iter != flux_map.rend();
+	 ++iter) {
+      result.insert(result.begin(), &(hash_map.at(iter->second)));
+
+      // Check for early stop
+      if (result.size() == max_stars) {
+	return result;
+      }
+    }
+
+    return result;
+    } */
+
 
 protected:
   /** @brief Add a star to the database without checking to see if it already exists.
