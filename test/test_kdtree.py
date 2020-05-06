@@ -8,7 +8,7 @@ class TestKDTree(unittest.TestCase):
         self.camera = Camera('cameras/science_cam.yml')
         self.db     = self.camera.load_catalog(2020)
 
-    def test_kdtree_sort(self):
+    def test_sort(self):
         tree = KDTree(self.db, self.camera.kdbucket_size)
         star0_before = tree[0]
         tree.sort()
@@ -16,12 +16,12 @@ class TestKDTree(unittest.TestCase):
 
         self.assertNotEqual(star0_before, star0_after)
 
-    def test_kdtree_iterator(self):
+    def test_iterator(self):
         tree = KDTree(self.db, self.camera.kdbucket_size)
         for star in tree:
             self.assertEqual(star.index, star.index)
         
-    def test_kdtree_search(self):
+    def test_search(self):
         radius = 0.05
         
         tree = KDTree(self.db, self.camera.kdbucket_size)
@@ -62,11 +62,16 @@ class TestKDTree(unittest.TestCase):
                 self.assertGreater(star.vector_squared_distance(1.0, 0.0, 0.0), radius ** 2)
 
         
-    def test_filter_catalog(self):
+    def test_mask_search(self):
         """Successfully filters the catalog and produces a smaller KDTree"""
 
         tree = KDTree(self.db, self.camera.kdbucket_size)
         tree.sort()
 
-        tree.filter_catalog()
+        mask = tree.mask_search(1.0, 0.0, 0.0, 0.1, 0.0)
+        items = tree.at(mask)
+
+        # Make a new tree from the same database but with only the
+        # items from the mask.
+        new_tree = KDTree(tree, items)
         

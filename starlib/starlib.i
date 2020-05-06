@@ -1,10 +1,23 @@
 %include <attribute.i>
 %include <exception.i>
+%include <std_vector.i>
+
+namespace std {
+  %template(BoolVector) vector<bool>;
+}
 
 %module starlib
 %{
 #include "star.hpp"
 #include "star_database.hpp"
+  %}
+
+namespace std {
+  %template(StarVector) vector<Star*>;
+}
+
+%module starlib
+%{
 #include "kdtree.hpp"
 #include "py_kdtree_iterator.hpp"
 
@@ -97,6 +110,7 @@ static int kdtree_iterator_error = 0;
     }
     return $self->at(index);
   }
+  
 
   KDTreeIterator __iter__() {
     KDTreeIterator ret = { $self, 0 };
