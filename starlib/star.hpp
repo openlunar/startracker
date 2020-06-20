@@ -125,6 +125,12 @@ public:
   }
 
 
+  /** @brief "Numerically stable method to calculate distance between
+   **        stars" from openstartracker.
+   *
+   * This is dist_arcsec in openstartracker, but this version uses
+   * radians instead.
+   */
   float approximate_distance(const float& x, const float& y, const float& z) const {
     float dot_product = r[0] * x + r[1] * y + r[2] * z;
 
@@ -239,24 +245,24 @@ public:
 };
 
 
-bool star_ptr_rx_less(const Star* lhs, const Star* rhs) {
+bool star_ptr_rx_less(const Star* const lhs, const Star* const rhs) {
   return lhs->x() < rhs->x();
 }
 
-bool star_ptr_ry_less(const Star* lhs, const Star* rhs) {
+bool star_ptr_ry_less(const Star* const lhs, const Star* const rhs) {
   return lhs->y() < rhs->y();
 }
 
-bool star_ptr_rz_less(const Star* lhs, const Star* rhs) {
+bool star_ptr_rz_less(const Star* const lhs, const Star* const rhs) {
   return lhs->z() < rhs->z();
 }
 
-bool star_ptr_flux_greater(const Star* lhs, const Star* rhs) {
+bool star_ptr_flux_greater(const Star* const lhs, const Star* const rhs) {
   return lhs->get_flux() > rhs->get_flux();
 }
 
 
-bool star_ptr_unique_flux_greater(const Star* lhs, const Star* rhs) {
+bool star_ptr_unique_flux_greater(const Star* const lhs, const Star* const rhs) {
   if (lhs->get_flux() == rhs->get_flux()) {
     return lhs < rhs;
   } else {
@@ -267,7 +273,7 @@ bool star_ptr_unique_flux_greater(const Star* lhs, const Star* rhs) {
 
 class UniqueStarPtrFluxGreater {
 public:
-  bool operator()(const Star* lhs, const Star* rhs) const {
+  bool operator()(const Star* const lhs, const Star* const rhs) const {
     return star_ptr_unique_flux_greater(lhs, rhs);
   }
 };

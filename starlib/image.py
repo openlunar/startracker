@@ -86,8 +86,9 @@ class ImageData(object):
 class Image(object):
     def __init__(self, camera, timestamp, image_filename,
                  show      = False):
-        self.data = ImageData(camera, timestamp)
-        self.stars = StarDatabase() # Put stars from the image here.
+        self.camera = camera
+        self.data   = ImageData(camera, timestamp)
+        self.stars  = StarDatabase() # Put stars from the image here.
 
         if os.path.isfile(image_filename):
             image = cv2.imread(image_filename)
@@ -130,3 +131,21 @@ class Image(object):
             self.stars += star
             return True
         
+
+    def match_lost_in_space(self):
+        """Only use the n brightest stars in the image for the first match,
+        where
+
+        n = max_false_stars + required_stars
+
+        """
+
+        # Get the brightest stars from this image, take all
+        # permutations and stick them in a constellation database, and
+        # then see if we can match that database to the global
+        # constellation database.
+        brightest = self.stars.stars_by_greatest_flux(self.camera.max_false_stars +
+                                                      self.camera.min_stars_per_fov)
+
+        import pdb
+        pdb.set_trace()

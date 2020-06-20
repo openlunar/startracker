@@ -27,6 +27,9 @@
 class StarDatabase {
 protected:
 
+  // FIXME: This next data structure really ought to just be an
+  // unordered_set, since the hash comes directly from Star.
+  
   std::unordered_map<hash_t,Star> hash_map; /* (--) hash from star hash value to star */
   std::set<hash_t> hash_set;                /* (--) sorted set of hash values */
   std::vector<hash_t> indices;              /* (--) vector of star indices to hash values */
@@ -115,24 +118,25 @@ public:
   }
 
   /** @brief Return a set of all stars in the database by brightness.
+   *
+   * There is no const version of this function because it's primarily
+   * used by the Python interface.
    */
-  /*std::set<Star*> stars_by_greatest_flux(size_t max_stars = 0) const {
-    if (max_stars == 0) max_stars = size();
-    std::set<Star*> result;
+  std::vector<Star*> stars_by_greatest_flux(size_t max_stars = 0) {
+    if (max_stars == 0 || max_stars > size()) max_stars = size();
+    std::vector<Star*> result(max_stars);
+    size_t result_index = 0;
     
-    for (std::multimap<float,hash_t>::const_iterator iter = flux_map.rbegin();
-	 iter != flux_map.rend();
-	 ++iter) {
-      result.insert(result.begin(), &(hash_map.at(iter->second)));
-
-      // Check for early stop
-      if (result.size() == max_stars) {
-	return result;
-      }
+    for (std::multimap<float,hash_t>::reverse_iterator iter = flux_map.rbegin();
+	 iter != flux_map.rend() && result_index < result.size();
+	 ++iter, ++result_index) {
+      result[result_index] = get_star_by_hash(iter->second);
     }
 
+
     return result;
-    } */
+  }
+
 
 
 protected:

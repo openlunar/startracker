@@ -8,16 +8,19 @@ class TestImage(unittest.TestCase):
 
     def setUp(self):
         self.camera = Camera('cameras/science_cam.yml')
+        self.image = Image(self.camera,
+                           time.time(),
+                           'images/science_cam_2018-05-08_50ms_gain40/samples/img0.png',
+                           show = False)
         
     def test_image(self):
         """Constructs image object successfully"""
         
-        image = Image(self.camera,
-                      time.time(),
-                      'images/science_cam_2018-05-08_50ms_gain40/samples/img0.png',
-                      show = False)
+        image = self.image
 
         self.assertEqual(image.stars.size, len(image.data.fluxes))
         self.assertEqual(image.stars.size, len(image.data.centroids))
         self.assertEqual(image.stars.size, len(image.data.covariances))
         self.assertEqual(image.stars.size, 23)
+
+        

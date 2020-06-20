@@ -1,6 +1,7 @@
 import unittest
 
 from test import test_star
+from test import test_constellation
 from test import test_star_database
 from test import test_camera
 from test import test_image
@@ -16,6 +17,7 @@ def starlib_test_suite():
     suite  = unittest.TestSuite()
     
     suite.addTests(loader.loadTestsFromModule(test_star))
+    suite.addTests(loader.loadTestsFromModule(test_constellation))
     suite.addTests(loader.loadTestsFromModule(test_camera))
     suite.addTests(loader.loadTestsFromModule(test_image))
     suite.addTests(loader.loadTestsFromModule(test_star_database))

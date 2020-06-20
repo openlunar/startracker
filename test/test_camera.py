@@ -17,3 +17,5 @@ class TestCamera(unittest.TestCase):
         self.assertLess(db.size, 1000)
         self.assertGreater(db.size, 0)
 
+    def test_stars_by_greatest_flux(self):
+        db = self.camera.load_catalog(2020, stop_after = 1000)

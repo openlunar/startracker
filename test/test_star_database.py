@@ -3,7 +3,7 @@ catalog is tested in test_camera.py."""
 
 import unittest
 
-from .context import StarDatabase, Star
+from .context import StarDatabase, Star, Camera
 
 class TestStarDatabase(unittest.TestCase):
 
@@ -16,3 +16,16 @@ class TestStarDatabase(unittest.TestCase):
         db2 = StarDatabase()
         self.assertEqual(db.count, 2)
         self.assertEqual(db.count, db2.count)
+
+    def test_stars_by_greatest_flux(self):
+        self.camera = Camera('cameras/science_cam.yml')
+        db = self.camera.load_catalog(2020, stop_after = 1000)
+        stars = db.stars_by_greatest_flux(100)
+        
+        # Returns the correct number of stars
+        self.assertEqual(len(stars), 100)
+
+        for ii in range(0, 99):
+            self.assertGreaterEqual(stars[ii].flux, stars[ii+1].flux)
+            self.assertNotEqual(stars[ii].hash, stars[ii+1].hash)
+        

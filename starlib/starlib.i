@@ -11,12 +11,14 @@ namespace std {
 %module starlib
 %{
 #include "star.hpp"
+#include "constellation.hpp"
 #include "star_database.hpp"
   %}
 
 namespace std {
   %template(StarVector) vector<Star*>;
 }
+
 
 %module starlib
 %{
@@ -26,6 +28,7 @@ namespace std {
 size_t StarDatabase::count = 0;
 static int kdtree_iterator_error = 0;
 %}
+
 
 // FIXME: This next line is a bit fragile
 %include "types.hpp"
@@ -53,6 +56,25 @@ static int kdtree_iterator_error = 0;
 
 %attribute(StarDatabase, size_t, size, size);
 %attribute(StarDatabase, float, max_variance, get_max_variance);
+
+%attribute(Constellation, float, distance, get_distance);
+%attribute(Constellation, float, d, get_distance);
+%attribute(Constellation, constellation_id_t, index, get_index);
+
+%extend Constellation {
+  Star* __getitem__(size_t index) {
+    if (index >= 2 || index < 0) {
+      kdtree_iterator_error = 1;
+      return NULL;
+    }
+    return $self->get_star(index);
+  }
+  
+%pythoncode {
+    def __repr__(self): return "Constellation({}, hashes=({}, {}), distance={})".format(self.index, self[0].hash, self[1].hash, self.distance)
+}};
+
+%include "constellation.hpp"
 
 %include "star_database.hpp"
    

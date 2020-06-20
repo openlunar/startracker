@@ -66,7 +66,7 @@ class Camera(object):
         self.threshold_factor      = float(y['threshold_factor'])
         self.double_star_pixels    = float(y['double_star_pixels'])
         self.max_false_stars       = int(y['max_false_stars'])
-        self.min_stars_per_fov     = int(y['min_stars_per_fov'])
+        self.min_stars_per_fov     = int(y['min_stars_per_fov']) # was required_stars
         self.db_redundancy         = int(y['db_redundancy'])
         self.base_flux             = float(y['base_flux'])
 
@@ -172,7 +172,8 @@ class Camera(object):
         
         return database
             
-    def solve(self, image_filename):
+    def solve(self, image_filename,
+              lost_in_space = True):
 
         # Get time of image receipt, attempt to process the image, and
         # then get another timestamp.
@@ -181,6 +182,7 @@ class Camera(object):
         timestamp_done_loading = time.time()
 
         # 1. Attempt to match based on brightest stars in image.
+        current_image.match_lost_in_space()
 
         # 2. Attempt to match based on last match.
 

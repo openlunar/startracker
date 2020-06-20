@@ -49,7 +49,7 @@ public:
     , elements(db_->size())
     , sorted(false)
   {
-    for (star_id_t ii = 0; ii < elements.size(); ++ii) {
+    for (size_t ii = 0; ii < elements.size(); ++ii) {
       elements[ii] = db->get_star(ii);
     }
   }
@@ -100,6 +100,9 @@ public:
   }
 
 
+  /** @brief Search for all stars matching the criteria, putting
+   **        results in a pass-by-reference vector.
+   */
   void mask_search(const float& x, const float& y, const float& z, const float& radius,
 		   const float& min_flux, float max_flux,
 		   std::vector<bool>& found) const {
